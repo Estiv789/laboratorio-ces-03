@@ -3,47 +3,94 @@ package pe.edu.unsch;
 
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 public class CuentaBancariaTest {
 
-    @Test
-    void retirarConSaldoSuficiente() {
-        CuentaBancaria cuenta = new CuentaBancaria(1000);
-        cuenta.retirar(200);
-        assertEquals(800, cuenta.getSaldo());
-    }
 
+    // PU-01: Retiro superior al saldo
     @Test
-    void retirarConSaldoInsuficiente() {
+    void retiroInsuficienteBloqueaLaCuenta() {
         CuentaBancaria cuenta = new CuentaBancaria(100);
-        cuenta.retirar(500);
+
+        cuenta.retirar(150);
+
+        assertTrue(cuenta.isBloqueada());
         assertEquals(100, cuenta.getSaldo());
     }
 
+    // PU-02: Retiro después del bloqueo
     @Test
-    void retirarMontoNegativo() {
-        CuentaBancaria cuenta = new CuentaBancaria(1000);
-        cuenta.retirar(-200);
-        assertEquals(1000, cuenta.getSaldo());
+    void cuentaBloqueadaNoPermiteRetirar() {
+        CuentaBancaria cuenta = new CuentaBancaria(100);
+
+        cuenta.retirar(150);
+        cuenta.retirar(20);
+
+        assertTrue(cuenta.isBloqueada());
+        assertEquals(100, cuenta.getSaldo());
     }
 
+    // PU-03: Depósito después del bloqueo
     @Test
-    void depositarMontoValido() {
-        CuentaBancaria cuenta = new CuentaBancaria(1000);
-        cuenta.depositar(500);
-        assertEquals(1500, cuenta.getSaldo());
+    void cuentaBloqueadaNoPermiteDepositar() {
+        CuentaBancaria cuenta = new CuentaBancaria(100);
+
+        cuenta.retirar(150);
+        cuenta.depositar(200);
+
+        assertEquals(100, cuenta.getSaldo());
+        assertTrue(cuenta.isBloqueada());
     }
 
+    // PU-04: Retiro con saldo suficiente
     @Test
-    void transferirDinero() {
+    void retiroValidoNoBloqueaLaCuenta() {
+        CuentaBancaria cuenta = new CuentaBancaria(100);
+
+        cuenta.retirar(30);
+
+        assertFalse(cuenta.isBloqueada());
+        assertEquals(70, cuenta.getSaldo());
+    }
+
+    // PU-05: Retiro con monto negativo
+    @Test
+    void montoNegativoNoProduceBloqueo() {
+        CuentaBancaria cuenta = new CuentaBancaria(100);
+
+        cuenta.retirar(-20);
+
+        assertFalse(cuenta.isBloqueada());
+        assertEquals(100, cuenta.getSaldo());
+    }
+
+    // PU-06: Transferencia con saldo insuficiente
+    @Test
+    void transferenciaInsuficienteBloqueaOrigenSinAlterarDestino() {
+        CuentaBancaria origen = new CuentaBancaria(100);
+        CuentaBancaria destino = new CuentaBancaria(60);
+
+        origen.transferir(destino, 150);
+
+        assertTrue(origen.isBloqueada());
+        assertEquals(100, origen.getSaldo());
+        assertEquals(60, destino.getSaldo());
+    }
+
+    // PU-07: Transferencia a cuenta bloqueada
+    @Test
+    void transferenciaADestinoBloqueadoConservaLosDosSaldos() {
         CuentaBancaria origen = new CuentaBancaria(1000);
-        CuentaBancaria destino = new CuentaBancaria(500);
+        CuentaBancaria destino = new CuentaBancaria(100);
 
-        origen.transferir(destino, 200);
+        destino.retirar(200);
+        origen.transferir(destino, 150);
 
-        assertEquals(800, origen.getSaldo());
-        assertEquals(700, destino.getSaldo());
+        assertEquals(1000, origen.getSaldo());
+        assertEquals(100, destino.getSaldo());
+        assertFalse(origen.isBloqueada());
+        assertTrue(destino.isBloqueada());
     }
-
 }
-  
